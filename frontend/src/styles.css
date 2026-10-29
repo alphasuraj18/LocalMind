@@ -24,3 +24,192 @@
 .markdown .inline-code{padding:2px 5px;border-radius:5px;background:#1c222b;color:#d8defc}
 .markdown pre{margin:14px 0;padding:14px 16px;overflow-x:auto;border:1px solid #303844;border-radius:10px;background:#0b0f14}
 .markdown pre code{display:block;background:transparent;padding:0;color:#dce3ed;line-height:1.55;font-size:13px}
+.rag-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--surface, #ffffff);
+}
+
+.rag-left,
+.rag-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+}
+
+.upload-button:hover {
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.document-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.rag-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rag-toggle input {
+  accent-color: currentColor;
+}
+
+.rag-controls select {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 7px;
+  padding: 5px 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+}
+
+.rag-controls select:disabled {
+  opacity: 0.45;
+}
+
+.upload-status {
+  margin-bottom: 7px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.upload-status.loading {
+  opacity: 0.65;
+}
+
+.sources {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.sources-title {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
+
+.source-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 9px;
+  margin-top: 5px;
+  border-radius: 8px;
+  background: rgba(127, 127, 127, 0.07);
+  font-size: 12px;
+}
+
+.source-card div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-card b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-card small {
+  opacity: 0.6;
+}
+
+.source-card > span {
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+
+@media (max-width: 700px) {
+  .rag-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rag-left,
+  .rag-controls {
+    width: 100%;
+  }
+
+  .rag-controls {
+    justify-content: space-between;
+  }
+
+  .document-name {
+    max-width: 140px;
+  }
+
+  .source-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+.upload-button {
+  color: var(--text, #111827);
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.upload-button:hover {
+  background: #f1f5f9;
+}
+
+.rag-toggle {
+  color: var(--text, #111827);
+}
+
+.rag-controls select {
+  color: #111827;
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.rag-controls select option {
+  color: #111827;
+  background: #ffffff;
+}
+
+.document-name {
+  color: var(--text, #111827);
+}
+
+.upload-status {
+  color: var(--text, #111827);
+}

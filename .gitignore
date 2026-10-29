@@ -6,3 +6,5 @@ node_modules/
 .env.local
 dist/
 .vite/
+backend/data/uploads/
+backend/data/rag/
