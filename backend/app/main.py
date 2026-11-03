@@ -11,16 +11,22 @@ from .rag.service import RAGService
 
 app = FastAPI(title="LocalMind API", version="0.1.0")
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 ollama = OllamaClient()
 rag = RAGService()
+
 
 UPLOAD_DIR = Path("data") / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -31,6 +37,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 @app.get("/api/health")
 async def health():
     status = await ollama.health()
+
     return {
         "app": "LocalMind",
         "ollama": status,
@@ -69,13 +76,23 @@ async def upload_document(file: UploadFile = File(...)):
         }
 
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
     except Exception as exc:
         raise HTTPException(
             status_code=500,
             detail=f"Document ingestion failed: {exc}",
         ) from exc
+
+
+@app.get("/api/rag/documents")
+async def list_documents():
+    return {
+        "documents": rag.list_documents()
+    }
 
 
 @app.post("/api/chat", response_model=ChatResponse)
@@ -86,7 +103,10 @@ async def chat(request: ChatRequest):
         sources = []
 
         if request.use_rag:
-            results = rag.retrieve(message, top_k=request.top_k)
+            results = rag.retrieve(
+                message,
+                top_k=request.top_k,
+            )
 
             if results:
                 context = "\n\n".join(
@@ -106,7 +126,10 @@ Answer based on the retrieved context when relevant. If the context does not con
 
                 sources = results
 
-        response = await ollama.chat(history, message)
+        response = await ollama.chat(
+            history,
+            message,
+        )
 
         return ChatResponse(
             response=response,
@@ -115,5 +138,7 @@ Answer based on the retrieved context when relevant. If the context does not con
         )
 
     except OllamaError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-
+        raise HTTPException(
+            status_code=503,
+            detail=str(exc),
+        ) from exc

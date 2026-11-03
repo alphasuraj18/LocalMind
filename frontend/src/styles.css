@@ -181,35 +181,31 @@
     gap: 4px;
   }
 }
-.upload-button {
-  color: var(--text, #111827);
-  background: #ffffff;
-  border-color: #cbd5e1;
+
+
+/* LocalMind RAG dark override */
+.rag-panel{background:#11151b !important;border:1px solid #252c35 !important;color:#b6bec9 !important}.upload-button{background:#151a21 !important;color:#c7ced8 !important;border-color:#303844 !important}.upload-button:hover{background:#1a2028 !important;border-color:#414b59 !important;color:#eef2f7 !important}.rag-toggle{color:#b6bec9 !important}.rag-controls select{background:#151a21 !important;color:#b6bec9 !important;border-color:#303844 !important}.rag-controls select option{background:#151a21 !important;color:#b6bec9 !important}.document-name{color:#8f99a8 !important}.upload-status{color:#86efac !important}
+
+
+/* Composer footer layout */
+.compose-footer{gap:10px}
+.compose-footer .rag-controls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.compose-footer > span{flex:1;min-width:0;margin:0 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compose-footer button{flex:0 0 32px}
+@media(max-width:520px){
+  .compose-footer{gap:6px}
+  .compose-footer > span{font-size:8px;margin:0 2px}
+  .compose-footer .rag-controls{gap:5px}
 }
 
-.upload-button:hover {
-  background: #f1f5f9;
-}
+/* Keep RAG controls compact inside composer footer */
+.compose-footer .rag-controls{width:auto !important;justify-content:flex-start !important;flex-shrink:0}
 
-.rag-toggle {
-  color: var(--text, #111827);
-}
+/* Document indicator chip */
+.document-chip{display:flex;align-items:center;gap:7px;margin:0 0 8px;padding:7px 10px;width:fit-content;max-width:100%;background:#11151b;border:1px solid #303844;border-radius:9px;color:#b6bec9;font-size:11px}.document-chip-name{color:#e2e7ee;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.document-chip-meta{color:#737d8c}.document-chip-remove{display:grid;place-items:center;width:20px;height:20px;margin-left:2px;padding:0;border:0;border-radius:6px;background:transparent;color:#737d8c;font-size:16px;line-height:1;cursor:pointer}.document-chip-remove:hover{background:#252b34;color:#eef2f7}
 
-.rag-controls select {
-  color: #111827;
-  background: #ffffff;
-  border-color: #cbd5e1;
-}
+/* Document indicator chip */
+.document-chip{display:flex;align-items:center;gap:7px;margin:0 0 8px;padding:7px 10px;width:fit-content;max-width:100%;background:#11151b;border:1px solid #303844;border-radius:9px;color:#b6bec9;font-size:11px}.document-chip-name{color:#e2e7ee;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.document-chip-meta{color:#737d8c}.document-chip-remove{display:grid;place-items:center;width:20px;height:20px;margin-left:2px;padding:0;border:0;border-radius:6px;background:transparent;color:#737d8c;font-size:16px;line-height:1;cursor:pointer}.document-chip-remove:hover{background:#252b34;color:#eef2f7}
 
-.rag-controls select option {
-  color: #111827;
-  background: #ffffff;
-}
-
-.document-name {
-  color: var(--text, #111827);
-}
-
-.upload-status {
-  color: var(--text, #111827);
-}
+/* RAG source cards */
+.sources{margin-top:12px}.sources-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#697384;margin-bottom:7px;font-family:'JetBrains Mono',monospace}.source-card{background:#11151b;border:1px solid #252c35;border-radius:9px;margin-bottom:6px;overflow:hidden}.source-card summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;cursor:pointer;list-style:none}.source-card summary::-webkit-details-marker{display:none}.source-card summary:hover{background:#151a21}.source-info{display:flex;align-items:center;gap:8px;min-width:0}.source-info b{font-size:11px;color:#d9dee7;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.source-info small{font-family:'JetBrains Mono',monospace;font-size:9px;color:#687384;white-space:nowrap}.source-score{font-family:'JetBrains Mono',monospace;font-size:9px;color:#8994a5;white-space:nowrap}.source-bar{height:2px;background:#202631;margin:0 11px 8px;overflow:hidden;border-radius:2px}.source-bar-fill{height:100%;background:#6875ed;border-radius:2px}.source-text{padding:0 11px 11px;color:#8f99a8;font-size:11px;line-height:1.6;white-space:pre-wrap}.source-text-label{font-family:'JetBrains Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:#596372;margin-bottom:5px}

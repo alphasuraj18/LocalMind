@@ -68,6 +68,7 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [documentName, setDocumentName] = useState("");
+  const [documentChunks, setDocumentChunks] = useState(0);
 
   const bottom = useRef(null);
   const textarea = useRef(null);
@@ -158,6 +159,7 @@ function App() {
     setUploading(true);
     setUploadStatus("Uploading and indexing...");
     setDocumentName("");
+    setDocumentChunks(0);
 
     try {
       const formData = new FormData();
@@ -175,6 +177,7 @@ function App() {
       }
 
       setDocumentName(data.file);
+      setDocumentChunks(data.chunks);
       setUploadStatus(
         `Ready · ${data.chunks} chunk${data.chunks === 1 ? "" : "s"} indexed`
       );
@@ -360,10 +363,10 @@ function App() {
 
               <div className="prompts">
                 {[
-                  "Explain RAG in simple terms",
-                  "Help me debug a Python function",
-                  "Give me 5 project ideas",
-                  "Teach me a concept step by step"
+                  "Summarize my uploaded document",
+                  "What skills are listed in my resume?",
+                  "Explain this document like I am a beginner",
+                  "Give me 5 project ideas"
                 ].map(x => (
                   <button
                     key={x}
@@ -456,56 +459,19 @@ function App() {
         </section>
 
         <div className="composer-wrap">
-          <div className="rag-panel">
-            <div className="rag-left">
-              <label className="upload-button">
-                <input
-                  ref={fileInput}
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  hidden
-                  onChange={e => {
-                    uploadDocument(e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
-                📄 Upload document
-              </label>
-
-              {documentName && (
-                <span className="document-name">
-                  {documentName}
-                </span>
-              )}
-            </div>
-
-            <div className="rag-controls">
-              <label className="rag-toggle">
-                <input
-                  type="checkbox"
-                  checked={useRag}
-                  onChange={e => setUseRag(e.target.checked)}
-                />
-                <span>RAG</span>
-              </label>
-
-              <select
-                value={topK}
-                onChange={e => setTopK(Number(e.target.value))}
-                disabled={!useRag}
-                title="Number of retrieved chunks"
-              >
-                <option value={1}>Top 1</option>
-                <option value={3}>Top 3</option>
-                <option value={5}>Top 5</option>
-              </select>
-            </div>
-          </div>
-
-          {uploadStatus && (
+          {uploadStatus && (!documentName || uploading) && (
             <div className={`upload-status ${uploading ? "loading" : ""}`}>
               {uploading ? "⏳ " : "✓ "}
               {uploadStatus}
+            </div>
+          )}
+
+          {documentName && !uploading && (
+            <div className="document-chip">
+              <span>📄</span>
+              <span className="document-chip-name">{documentName}</span>
+              <span className="document-chip-meta">· {documentChunks} chunks</span>
+              <button type="button" className="document-chip-remove" onClick={() => { setDocumentName(""); setDocumentChunks(0); setUseRag(false); setUploadStatus(""); }} aria-label="Remove document" title="Remove document">×</button>
             </div>
           )}
 
@@ -520,12 +486,45 @@ function App() {
                   e.currentTarget.form?.requestSubmit();
                 }
               }}
-              placeholder={useRag ? "Ask about your documents..." : "Message LocalMind..."}
+              placeholder={useRag && !documentName ? "Upload a document to ask about it..." : useRag ? "Ask about your documents..." : "Message LocalMind..."}
               rows="1"
               disabled={loading}
             />
 
             <div className="compose-footer">
+              <div className="rag-controls">
+                <label className="upload-button">
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    hidden
+                    onChange={e => {
+                      uploadDocument(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                  <span>📄 Upload</span>
+                </label>
+                <label className="rag-toggle">
+                  <input
+                    type="checkbox"
+                    checked={useRag}
+                    onChange={e => setUseRag(e.target.checked)} disabled={!documentName || uploading}
+                  />
+                  <span>RAG</span>
+                </label>
+                <select
+                  value={topK}
+                  onChange={e => setTopK(Number(e.target.value))}
+                  disabled={!useRag}
+                  title="Number of retrieved chunks"
+                >
+                  <option value={1}>Top 1</option>
+                  <option value={3}>Top 3</option>
+                  <option value={5}>Top 5</option>
+                </select>
+              </div>
               <span>
                 {input
                   ? `${input.length.toLocaleString()} / 10,000`
@@ -548,3 +547,14 @@ function App() {
 }
 
 createRoot(document.getElementById("root")).render(<App/>);
+
+
+
+
+
+
+
+
+
+
+
