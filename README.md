@@ -4,6 +4,10 @@
 
 LocalMind is a personal project exploring how to build an AI assistant that runs on your own machine. It connects a React frontend to a FastAPI backend and a locally hosted language model through [Ollama](https://ollama.com/). The current implementation supports chat, local model status, and retrieval-augmented conversations over uploaded PDF, DOCX, and TXT files.
 
+## Application Preview
+
+![LocalMind Dashboard](screenshots/localmind-dashboard.png)
+
 > **Project status:** Active development. The current build includes local chat and a first multi-document RAG implementation. The document library and richer source-inspection experience are being developed incrementally.
 
 ## What it does
