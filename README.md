@@ -6,8 +6,7 @@ LocalMind is a personal project exploring how to build an AI assistant that runs
 
 ## Application Preview
 
-![LocalMind Dashboard](<img width="1919" height="1079" alt="Screenshot 2026-11-04 224208" src="https://github.com/user-attachments/assets/9d2d555c-1351-4faf-92f0-0d443167a746" />
-)
+![LocalMind Dashboard](https://github.com/user-attachments/assets/9d2d555c-1351-4faf-92f0-0d443167a746)
 
 > **Project status:** Active development. The current build includes local chat and a first multi-document RAG implementation. The document library and richer source-inspection experience are being developed incrementally.
 
