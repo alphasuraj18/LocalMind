@@ -71,7 +71,7 @@ LocalMind is a personal project exploring how to build an AI assistant that runs
 
 Install the following before running the project:
 
-- Python 3.11 or newer
+- Python 3.10+
 - Node.js (the installed Vite version may require a recent Node 20 release or Node 22+)
 - [Ollama](https://ollama.com/)
 - Git
@@ -148,7 +148,6 @@ Open the local URL printed by Vite (normally http://localhost:5173).
 | `GET` | `/api/health` | Check application and Ollama connectivity |
 | `GET` | `/api/models` | List models available through Ollama |
 | `POST` | `/api/rag/upload` | Upload and index a PDF, DOCX, or TXT file |
-| `GET` | `/api/rag/documents` | List document metadata currently registered by the backend |
 | `POST` | `/api/chat` | Generate a response, optionally using retrieved context |
 
 ### Chat request example
