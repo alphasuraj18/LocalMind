@@ -20,23 +20,77 @@ class VectorStore:
         vectors = np.asarray(embeddings, dtype="float32")
 
         if len(vectors) != len(texts):
-            raise ValueError("Number of embeddings must match number of texts.")
+            raise ValueError(
+                "Number of embeddings must match number of texts."
+            )
 
         if metadata is None:
             metadata = [{} for _ in texts]
 
         if len(metadata) != len(texts):
-            raise ValueError("Number of metadata entries must match number of texts.")
+            raise ValueError(
+                "Number of metadata entries must match number of texts."
+            )
 
         self.index.add(vectors)
         self.texts.extend(texts)
         self.metadata.extend(metadata)
 
+    def delete_by_source(self, source: str) -> int:
+        if len(self.texts) != len(self.metadata):
+            raise RuntimeError(
+                "Vector metadata and text count do not match."
+            )
+
+        if self.index.ntotal != len(self.texts):
+            raise RuntimeError(
+                "FAISS index and text count do not match."
+            )
+
+        keep_indices = [
+            i
+            for i, item in enumerate(self.metadata)
+            if item.get("source") != source
+        ]
+
+        removed_count = len(self.texts) - len(keep_indices)
+
+        if removed_count == 0:
+            return 0
+
+        new_index = faiss.IndexFlatIP(self.index.d)
+
+        if keep_indices:
+            embeddings = np.vstack([
+                self.index.reconstruct(i)
+                for i in keep_indices
+            ]).astype("float32")
+
+            new_index.add(embeddings)
+
+        self.index = new_index
+
+        self.texts = [
+            self.texts[i]
+            for i in keep_indices
+        ]
+
+        self.metadata = [
+            self.metadata[i]
+            for i in keep_indices
+        ]
+
+        return removed_count
+
     def search(self, embedding, top_k: int = 5):
         if not self.texts:
             return []
 
-        vector = np.asarray(embedding, dtype="float32").reshape(1, -1)
+        vector = np.asarray(
+            embedding,
+            dtype="float32",
+        ).reshape(1, -1)
+
         scores, indices = self.index.search(
             vector,
             min(top_k, len(self.texts)),
@@ -75,7 +129,11 @@ class VectorStore:
         )
 
         (path / "metadata.json").write_text(
-            json.dumps(self.metadata, ensure_ascii=False, indent=2),
+            json.dumps(
+                self.metadata,
+                ensure_ascii=False,
+                indent=2,
+            ),
             encoding="utf-8",
         )
 
@@ -106,6 +164,8 @@ class VectorStore:
                 metadata_path.read_text(encoding="utf-8")
             )
         else:
-            store.metadata = [{} for _ in store.texts]
+            store.metadata = [
+                {} for _ in store.texts
+            ]
 
         return store

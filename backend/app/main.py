@@ -61,7 +61,14 @@ async def upload_document(file: UploadFile = File(...)):
             detail="Unsupported file type. Supported types: PDF, DOCX, TXT.",
         )
 
-    filename = Path(file.filename).name
+    filename = Path(file.filename or "").name
+
+    if rag.documents.find(filename) is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document '{filename}' is already indexed.",
+        )
+
     destination = UPLOAD_DIR / filename
 
     try:
@@ -93,7 +100,43 @@ async def list_documents():
     return {
         "documents": rag.list_documents()
     }
+@app.delete("/api/rag/documents/{filename}")
+async def delete_document(filename: str):
+    safe_filename = Path(filename).name
 
+    if not safe_filename or safe_filename != filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid document filename.",
+        )
+
+    try:
+        result = rag.delete_document(safe_filename)
+
+        if result is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found.",
+            )
+
+        uploaded_file = UPLOAD_DIR / safe_filename
+
+        if uploaded_file.is_file():
+            uploaded_file.unlink()
+
+        return {
+            "message": "Document deleted successfully.",
+            **result,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document deletion failed: {exc}",
+        ) from exc
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):

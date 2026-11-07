@@ -77,3 +77,13 @@ class RAGPipeline:
             query_embedding,
             top_k=top_k,
         )
+    def delete_by_source(self, source_name: str) -> int:
+        if self.store is None:
+            return 0
+
+        removed_count = self.store.delete_by_source(source_name)
+
+        if removed_count > 0:
+            self.store.save(str(self.data_dir))
+
+        return removed_count
