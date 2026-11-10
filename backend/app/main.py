@@ -6,11 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .ollama import OllamaClient, OllamaError
 from .schemas import ChatRequest, ChatResponse
-from .rag.service import RAGService
+from .rag.service import RAGService, DuplicateDocumentError
 
 
 app = FastAPI(title="LocalMind API", version="0.1.0")
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,10 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 ollama = OllamaClient()
 rag = RAGService()
-
 
 UPLOAD_DIR = Path("data") / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -37,7 +34,6 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 @app.get("/api/health")
 async def health():
     status = await ollama.health()
-
     return {
         "app": "LocalMind",
         "ollama": status,
@@ -47,13 +43,14 @@ async def health():
 
 @app.get("/api/models")
 async def models():
-    status = await ollama.health()
-    return status
+    return await ollama.health()
 
 
 @app.post("/api/rag/upload")
 async def upload_document(file: UploadFile = File(...)):
-    extension = Path(file.filename or "").suffix.lower()
+    original_name = file.filename or ""
+    extension = Path(original_name).suffix.lower()
+    filename = Path(original_name).name
 
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -61,7 +58,8 @@ async def upload_document(file: UploadFile = File(...)):
             detail="Unsupported file type. Supported types: PDF, DOCX, TXT.",
         )
 
-    filename = Path(file.filename or "").name
+    if not filename or filename in {".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid filename.")
 
     if rag.documents.find(filename) is not None:
         raise HTTPException(
@@ -70,57 +68,74 @@ async def upload_document(file: UploadFile = File(...)):
         )
 
     destination = UPLOAD_DIR / filename
+    created_destination = False
 
     try:
         content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+
+        # Avoid overwriting an existing file that may be an orphan or user data.
+        if destination.exists():
+            raise HTTPException(
+                status_code=409,
+                detail=f"A file named '{filename}' already exists in the upload directory.",
+            )
+
         destination.write_bytes(content)
+        created_destination = True
 
         result = rag.ingest(str(destination))
-
         return {
             "message": "Document ingested successfully.",
             **result,
         }
 
+    except DuplicateDocumentError as exc:
+        if created_destination and destination.exists():
+            destination.unlink()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+    except HTTPException:
+        if created_destination and destination.exists():
+            destination.unlink()
+        raise
+
     except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
+        if created_destination and destination.exists():
+            destination.unlink()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     except Exception as exc:
+        if created_destination and destination.exists():
+            destination.unlink()
         raise HTTPException(
             status_code=500,
             detail=f"Document ingestion failed: {exc}",
         ) from exc
 
+    finally:
+        await file.close()
+
 
 @app.get("/api/rag/documents")
 async def list_documents():
-    return {
-        "documents": rag.list_documents()
-    }
+    return {"documents": rag.list_documents()}
+
+
 @app.delete("/api/rag/documents/{filename}")
 async def delete_document(filename: str):
     safe_filename = Path(filename).name
 
     if not safe_filename or safe_filename != filename:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid document filename.",
-        )
+        raise HTTPException(status_code=400, detail="Invalid document filename.")
 
     try:
         result = rag.delete_document(safe_filename)
-
         if result is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Document not found.",
-            )
+            raise HTTPException(status_code=404, detail="Document not found.")
 
         uploaded_file = UPLOAD_DIR / safe_filename
-
         if uploaded_file.is_file():
             uploaded_file.unlink()
 
@@ -131,32 +146,27 @@ async def delete_document(filename: str):
 
     except HTTPException:
         raise
-
     except Exception as exc:
         raise HTTPException(
             status_code=500,
             detail=f"Document deletion failed: {exc}",
         ) from exc
 
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     try:
-        history = [m.model_dump() for m in request.history]
+        history = [message.model_dump() for message in request.history]
         message = request.message
         sources = []
 
         if request.use_rag:
-            results = rag.retrieve(
-                message,
-                top_k=request.top_k,
-            )
-
+            results = rag.retrieve(message, top_k=request.top_k)
             if results:
                 context = "\n\n".join(
-                    f"[Source {i + 1}]\n{item['text']}"
-                    for i, item in enumerate(results)
+                    f"[Source {index + 1}]\n{item['text']}"
+                    for index, item in enumerate(results)
                 )
-
                 message = f"""Use the following retrieved context to answer the user's question.
 
 Retrieved context:
@@ -166,14 +176,9 @@ User question:
 {request.message}
 
 Answer based on the retrieved context when relevant. If the context does not contain enough information, say so clearly."""
-
                 sources = results
 
-        response = await ollama.chat(
-            history,
-            message,
-        )
-
+        response = await ollama.chat(history, message)
         return ChatResponse(
             response=response,
             model=settings.ollama_model,
@@ -181,7 +186,4 @@ Answer based on the retrieved context when relevant. If the context does not con
         )
 
     except OllamaError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail=str(exc),
-        ) from exc
+        raise HTTPException(status_code=503, detail=str(exc)) from exc

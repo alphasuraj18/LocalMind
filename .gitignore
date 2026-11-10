@@ -8,3 +8,17 @@ dist/
 .vite/
 backend/data/uploads/
 backend/data/rag/
+
+# Local RAG data and backups
+backend/data/backups/
+backend/data_backup_*/
+
+# Temporary test files
+/empty_test.txt
+/lm_duplicate_test.txt
+/lm_duplicate_test_copy.txt
+/localmind_delete_test_20261108.txt
+/localmind_test.txt
+
+# One-time maintenance script
+/repair_rag_duplicates.py

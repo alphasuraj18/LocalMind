@@ -19,29 +19,91 @@ const Close = () => <Icon><path d="m6 6 12 12M18 6 6 18"/></Icon>;
 const Send = () => <Icon><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></Icon>;
 const Copy = () => <Icon size={14}><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></Icon>;
 
-function Markdown({ text }) {
-  return (
-    <div className="markdown">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          pre({ children }) {
-            return <pre>{children}</pre>;
-          },
-          code({ children, className }) {
-            const isBlock = /language-/.test(className || "") || String(children).includes("\n");
+function Markdown({ text, sources = [], activeSource, onCitationClick }) {
+  // Convert backend references such as [Source 1] into clickable inline citations.
+  const citationText = (text || "").replace(
+    /\[Source\s+(\d+)\]/gi,
+    (match, number) => Number(number) <= sources.length
+      ? `[${number}](#localmind-source-${number})`
+      : match
+  );
 
-            return (
-              <code className={isBlock ? className : "inline-code"}>
-                {children}
-              </code>
-            );
-          },
-        }}
-      >
-        {text}
-      </ReactMarkdown>
-    </div>
+  const selectedSource = activeSource !== null && activeSource !== undefined
+    ? sources[activeSource]
+    : null;
+
+  return (
+    <>
+      <div className="markdown">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            pre({ children }) {
+              return <pre>{children}</pre>;
+            },
+            code({ children, className }) {
+              const isBlock = /language-/.test(className || "") || String(children).includes("\n");
+
+              return (
+                <code className={isBlock ? className : "inline-code"}>
+                  {children}
+                </code>
+              );
+            },
+            a({ href, children }) {
+              const citation = href?.match(/^#localmind-source-(\d+)$/);
+
+              if (citation) {
+                const sourceIndex = Number(citation[1]) - 1;
+                const isActive = activeSource === sourceIndex;
+
+                return (
+                  <button
+                    type="button"
+                    className={`inline-citation${isActive ? " active" : ""}`}
+                    onClick={() => onCitationClick?.(sourceIndex)}
+                    aria-label={`Show source ${sourceIndex + 1}`}
+                    aria-expanded={isActive}
+                  >
+                    {children}
+                  </button>
+                );
+              }
+
+              return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
+            },
+          }}
+        >
+          {citationText}
+        </ReactMarkdown>
+      </div>
+
+      {selectedSource && (
+        <div className="citation-detail" role="status">
+          <div className="citation-detail-heading">
+            <span className="citation-detail-number">[{activeSource + 1}]</span>
+            <strong>{selectedSource.source || "Local document"}</strong>
+            <button
+              type="button"
+              className="citation-detail-close"
+              onClick={() => onCitationClick?.(activeSource)}
+              aria-label="Close source details"
+            >
+              ×
+            </button>
+          </div>
+          <div className="citation-detail-meta">
+            {selectedSource.chunk ? `Chunk ${selectedSource.chunk}` : "Retrieved passage"}
+            {typeof selectedSource.score === "number"
+              ? ` · ${(selectedSource.score * 100).toFixed(1)}% relevance`
+              : ""}
+          </div>
+          {selectedSource.text && (
+            <p className="citation-detail-text">{selectedSource.text}</p>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -69,6 +131,13 @@ function App() {
   const [uploadStatus, setUploadStatus] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [documentChunks, setDocumentChunks] = useState(0);
+  const [documents, setDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState("");
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [deletingDocument, setDeletingDocument] = useState("");
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [expandedCitation, setExpandedCitation] = useState(null);
 
   const bottom = useRef(null);
   const textarea = useRef(null);
@@ -88,6 +157,7 @@ function App() {
 
   useEffect(() => {
     check();
+    fetchDocuments();
     const t = setInterval(check, 30000);
     return () => clearInterval(t);
   }, []);
@@ -95,6 +165,66 @@ function App() {
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  async function fetchDocuments() {
+    setDocumentsLoading(true);
+    setDocumentsError("");
+
+    try {
+      const response = await fetch(`${API}/rag/documents`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Could not load documents.");
+      }
+
+      setDocuments(Array.isArray(data.documents) ? data.documents : []);
+    } catch (err) {
+      setDocumentsError(err.message || "Could not connect to the document library.");
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }
+
+  async function deleteDocument(filename) {
+    const confirmed = window.confirm(
+      `Delete "${filename}" from LocalMind? This removes its indexed chunks and uploaded file.`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingDocument(filename);
+    setDocumentsError("");
+
+    try {
+      const response = await fetch(
+        `${API}/rag/documents/${encodeURIComponent(filename)}`,
+        { method: "DELETE" }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Document deletion failed.");
+      }
+
+      if (documentName === filename) {
+        setDocumentName("");
+        setDocumentChunks(0);
+      }
+
+      const remaining = documents.filter(doc => doc.filename !== filename);
+      setDocuments(remaining);
+
+      if (remaining.length === 0) {
+        setUseRag(false);
+      }
+    } catch (err) {
+      await fetchDocuments();
+      setDocumentsError(err.message || "Document deletion failed.");
+    } finally {
+      setDeletingDocument("");
+    }
+  }
 
   async function check() {
     try {
@@ -117,6 +247,7 @@ function App() {
   }
 
   function newChat() {
+    setShowLibrary(false);
     setActive(null);
     setMessages([]);
     setInput("");
@@ -182,6 +313,7 @@ function App() {
         `Ready · ${data.chunks} chunk${data.chunks === 1 ? "" : "s"} indexed`
       );
       setUseRag(true);
+      await fetchDocuments();
     } catch (err) {
       setUploadStatus(`Upload failed: ${err.message}`);
     } finally {
@@ -260,6 +392,14 @@ function App() {
     .filter(c => c.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
+  const visibleDocuments = documents.filter(doc =>
+    (doc.filename || "").toLowerCase().includes(documentSearch.toLowerCase())
+  );
+  const totalChunks = documents.reduce(
+    (total, doc) => total + Number(doc.chunks || 0),
+    0
+  );
+
   return (
     <div className="app">
       <aside className={`sidebar ${mobile ? "show" : ""}`}>
@@ -276,6 +416,19 @@ function App() {
 
         <button className="new-chat" onClick={newChat}>
           <Plus/>New chat
+        </button>
+
+        <button
+          className={`library-nav ${showLibrary ? "active" : ""}`}
+          onClick={() => {
+            setShowLibrary(true);
+            setMobile(false);
+            fetchDocuments();
+          }}
+        >
+          <span>▤</span>
+          Document Library
+          <span className="library-count">{documents.length}</span>
         </button>
 
         <label className="search">
@@ -295,6 +448,7 @@ function App() {
               className={`chat-item ${active === c.id ? "active" : ""}`}
               key={c.id}
               onClick={() => {
+                setShowLibrary(false);
                 setActive(c.id);
                 setMessages(c.messages);
                 setMobile(false);
@@ -345,8 +499,107 @@ function App() {
           </div>
         </header>
 
-        <section className="content">
-          {!messages.length ? (
+        <section className={`content ${showLibrary ? "library-open" : ""}`}>
+          {showLibrary ? (
+            <div className="library-page">
+              <div className="library-heading">
+                <div>
+                  <div className="eyebrow">LOCAL KNOWLEDGE BASE</div>
+                  <h1>Document Library</h1>
+                  <p>Manage the files indexed for local retrieval.</p>
+                </div>
+                <button className="library-close" onClick={() => setShowLibrary(false)}>
+                  Back to chat
+                </button>
+              </div>
+
+              <div className="library-stats">
+                <div className="library-stat">
+                  <span>DOCUMENTS</span>
+                  <strong>{documents.length}</strong>
+                </div>
+                <div className="library-stat">
+                  <span>INDEXED CHUNKS</span>
+                  <strong>{totalChunks}</strong>
+                </div>
+                <div className="library-stat">
+                  <span>SUPPORTED FORMATS</span>
+                  <strong>PDF · DOCX · TXT</strong>
+                </div>
+              </div>
+
+              <div className="library-toolbar">
+                <label className="library-search">
+                  <Search/>
+                  <input
+                    value={documentSearch}
+                    onChange={e => setDocumentSearch(e.target.value)}
+                    placeholder="Search documents..."
+                  />
+                </label>
+                <button
+                  className="library-refresh"
+                  onClick={fetchDocuments}
+                  disabled={documentsLoading}
+                >
+                  {documentsLoading ? "Refreshing..." : "↻ Refresh"}
+                </button>
+              </div>
+
+              {documentsError && (
+                <div className="library-error" role="alert">
+                  {documentsError}
+                </div>
+              )}
+
+              {documentsLoading && documents.length === 0 ? (
+                <div className="library-state">Loading your documents...</div>
+              ) : visibleDocuments.length > 0 ? (
+                <div className="document-list">
+                  {visibleDocuments.map(doc => (
+                    <article className="library-document" key={doc.filename}>
+                      <div className="library-file-icon">▤</div>
+                      <div className="library-document-info">
+                        <strong title={doc.filename}>{doc.filename}</strong>
+                        <span>
+                          {(doc.filename || "").split(".").pop().toUpperCase()}
+                          <i>·</i>
+                          {doc.chunks || 0} chunks
+                          {doc.embedding_dimension ? (
+                            <>
+                              <i>·</i>
+                              {doc.embedding_dimension} dimensions
+                            </>
+                          ) : null}
+                        </span>
+                      </div>
+                      <button
+                        className="document-delete"
+                        onClick={() => deleteDocument(doc.filename)}
+                        disabled={Boolean(deletingDocument)}
+                        title={`Delete ${doc.filename}`}
+                      >
+                        {deletingDocument === doc.filename ? "Deleting..." : "Delete"}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="library-empty">
+                  <div>▤</div>
+                  <h2>{documents.length ? "No matching documents" : "Your library is empty"}</h2>
+                  <p>
+                    {documents.length
+                      ? "Try a different filename."
+                      : "Upload a PDF, DOCX, or TXT file below the chat to index it for local retrieval."}
+                  </p>
+                  {documents.length > 0 && (
+                    <button onClick={() => setDocumentSearch("")}>Clear search</button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : !messages.length ? (
             <div className="welcome">
               <div className="hero-icon"><Sparkle size={28}/></div>
               <div className="eyebrow">LOCAL AI ASSISTANT</div>
@@ -395,32 +648,20 @@ function App() {
 
                     <div className="bubble">
                       {m.role === "assistant"
-                        ? <Markdown text={m.content}/>
+                        ? (
+                          <Markdown
+                            text={m.content}
+                            sources={m.sources || []}
+                            activeSource={expandedCitation?.messageIndex === i ? expandedCitation.sourceIndex : null}
+                            onCitationClick={(sourceIndex) => setExpandedCitation((current) =>
+                              current?.messageIndex === i && current.sourceIndex === sourceIndex
+                                ? null
+                                : { messageIndex: i, sourceIndex }
+                            )}
+                          />
+                        )
                         : <p>{m.content}</p>}
                     </div>
-
-                    {m.role === "assistant" && m.sources?.length > 0 && (
-                      <div className="sources">
-                        <div className="sources-title">Sources</div>
-
-                        {m.sources.map((source, index) => (
-                          <div className="source-card" key={index}>
-                            <div>
-                              <b>{source.source || "Local document"}</b>
-                              {source.chunk && (
-                                <small>Chunk {source.chunk}</small>
-                              )}
-                            </div>
-
-                            <span>
-                              {typeof source.score === "number"
-                                ? `${(source.score * 100).toFixed(1)}% match`
-                                : ""}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
 
                     {m.role === "assistant" && (
                       <button
@@ -458,7 +699,7 @@ function App() {
           )}
         </section>
 
-        <div className="composer-wrap">
+        {!showLibrary && <div className="composer-wrap">
           {uploadStatus && (!documentName || uploading) && (
             <div className={`upload-status ${uploading ? "loading" : ""}`}>
               {uploading ? "⏳ " : "✓ "}
@@ -486,7 +727,7 @@ function App() {
                   e.currentTarget.form?.requestSubmit();
                 }
               }}
-              placeholder={useRag && !documentName ? "Upload a document to ask about it..." : useRag ? "Ask about your documents..." : "Message LocalMind..."}
+              placeholder={useRag && documents.length === 0 ? "Upload a document to ask about it..." : useRag ? "Ask about your documents..." : "Message LocalMind..."}
               rows="1"
               disabled={loading}
             />
@@ -510,7 +751,7 @@ function App() {
                   <input
                     type="checkbox"
                     checked={useRag}
-                    onChange={e => setUseRag(e.target.checked)} disabled={!documentName || uploading}
+                    onChange={e => setUseRag(e.target.checked)} disabled={documents.length === 0 || uploading}
                   />
                   <span>RAG</span>
                 </label>
@@ -540,7 +781,7 @@ function App() {
           <div className="privacy">
             Your prompts are processed locally through Ollama.
           </div>
-        </div>
+        </div>}
       </main>
     </div>
   );
