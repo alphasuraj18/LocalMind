@@ -1,17 +1,22 @@
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+
 node_modules/
 .env
 .env.local
 dist/
 .vite/
+
+# Local RAG data
 backend/data/uploads/
 backend/data/rag/
-
-# Local RAG data and backups
 backend/data/backups/
 backend/data_backup_*/
+
+# Generated benchmark reports
+backend/reports/
 
 # Temporary test files
 /empty_test.txt

@@ -7,6 +7,7 @@ from .config import settings
 from .ollama import OllamaClient, OllamaError
 from .schemas import ChatRequest, ChatResponse
 from .rag.service import RAGService, DuplicateDocumentError
+from .rag.grounding import has_valid_source_citations
 
 
 app = FastAPI(title="LocalMind API", version="0.1.0")
@@ -162,12 +163,33 @@ async def chat(request: ChatRequest):
 
         if request.use_rag:
             results = rag.retrieve(message, top_k=request.top_k)
-            if results:
-                context = "\n\n".join(
-                    f"[Source {index + 1}]\n{item['text']}"
-                    for index, item in enumerate(results)
+
+            # Never silently answer from the base model when retrieval found no evidence.
+            if not results:
+                return ChatResponse(
+                    response=(
+                        "I couldn't find relevant information in your indexed "
+                        "documents. Try rephrasing your question or uploading "
+                        "a document that covers this topic."
+                    ),
+                    model=settings.ollama_model,
+                    sources=[],
                 )
-                message = f"""Use the following retrieved context to answer the user's question.
+
+            sources = results
+            context = "\n\n".join(
+                f"[Source {index + 1}]\n{item['text']}"
+                for index, item in enumerate(results)
+            )
+            message = f"""You are answering a question using a closed set of retrieved document passages.
+
+Rules:
+- Use only the retrieved context below for factual claims about the user's documents.
+- Do not use outside knowledge to fill gaps.
+- Cite each factual paragraph with one or more exact source markers, such as [Source 1].
+- Only cite source numbers that appear in the retrieved context.
+- If the passages do not contain enough information, say that the documents do not provide enough information. Do not guess.
+- Do not invent quotations, facts, filenames, or source numbers.
 
 Retrieved context:
 {context}
@@ -175,10 +197,19 @@ Retrieved context:
 User question:
 {request.message}
 
-Answer based on the retrieved context when relevant. If the context does not contain enough information, say so clearly."""
-                sources = results
+Write a clear, concise answer grounded in the retrieved context."""
 
         response = await ollama.chat(history, message)
+
+        if request.use_rag and not has_valid_source_citations(
+            response, source_count=len(sources)
+        ):
+            response = (
+                "I retrieved document passages, but couldn't produce an answer "
+                "with valid source citations. Please rephrase the question or "
+                "try again. You can inspect the retrieved passages below."
+            )
+
         return ChatResponse(
             response=response,
             model=settings.ollama_model,

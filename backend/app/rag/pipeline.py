@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from .chunker import chunk_text
@@ -7,10 +8,27 @@ from .vector_store import VectorStore
 
 
 class RAGPipeline:
-    def __init__(self):
+    def __init__(self, min_similarity_score: float | None = None):
         self.embedder = Embedder()
         self.store = None
         self.data_dir = Path("data") / "rag"
+
+        configured_threshold = (
+            os.getenv("LOCALMIND_MIN_RETRIEVAL_SCORE", "0.45")
+            if min_similarity_score is None
+            else min_similarity_score
+        )
+        try:
+            self.min_similarity_score = float(configured_threshold)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "LOCALMIND_MIN_RETRIEVAL_SCORE must be a valid number."
+            ) from exc
+
+        if not -1.0 <= self.min_similarity_score <= 1.0:
+            raise ValueError(
+                "Minimum retrieval score must be between -1.0 and 1.0."
+            )
 
         self._load_store()
 
@@ -67,16 +85,39 @@ class RAGPipeline:
             "embedding_dimension": embeddings.shape[1],
         }
 
-    def retrieve(self, query: str, top_k: int = 5):
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        min_similarity_score: float | None = None,
+    ):
         if self.store is None or not self.store.texts:
             return []
 
+        threshold = (
+            self.min_similarity_score
+            if min_similarity_score is None
+            else float(min_similarity_score)
+        )
+        if not -1.0 <= threshold <= 1.0:
+            raise ValueError("Minimum retrieval score must be between -1.0 and 1.0.")
+
         query_embedding = self.embedder.encode_query(query)[0]
 
-        return self.store.search(
+        results = self.store.search(
             query_embedding,
             top_k=top_k,
         )
+
+        # FAISS uses normalized embeddings here, so these are cosine-like
+        # similarity scores, not probabilities. Keep only results meeting
+        # the configured minimum score.
+        return [
+            result
+            for result in results
+            if float(result.get("score", -1.0)) >= threshold
+        ]
+
     def delete_by_source(self, source_name: str) -> int:
         if self.store is None:
             return 0

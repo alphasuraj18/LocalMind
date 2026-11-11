@@ -1,0 +1,270 @@
+[
+  {
+    "query": "Which programming language is commonly used for machine learning?",
+    "relevant": [
+      "python::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "Name a language used for automation and software development.",
+    "relevant": [
+      "python::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What programming language can be used to build machine learning applications?",
+    "relevant": [
+      "python::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "Which language is popular in machine learning?",
+    "relevant": [
+      "python::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How does Python support data analysis?",
+    "relevant": [
+      "python::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "Which Python libraries help process and analyze datasets?",
+    "relevant": [
+      "python::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What are NumPy and Pandas used for?",
+    "relevant": [
+      "python::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "Which tools are useful for analyzing data in Python?",
+    "relevant": [
+      "python::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What is supervised learning?",
+    "relevant": [
+      "ml::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How does a model learn from labelled examples?",
+    "relevant": [
+      "ml::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What does supervised learning predict?",
+    "relevant": [
+      "ml::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How are unseen data outputs predicted in supervised learning?",
+    "relevant": [
+      "ml::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What is the purpose of a training dataset?",
+    "relevant": [
+      "ml::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What data does a machine learning algorithm use to learn patterns?",
+    "relevant": [
+      "ml::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How does a model learn its parameters?",
+    "relevant": [
+      "ml::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What examples are used during machine learning training?",
+    "relevant": [
+      "ml::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What is a relational database?",
+    "relevant": [
+      "database::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How is information organized in a relational database?",
+    "relevant": [
+      "database::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What are rows and columns in a database?",
+    "relevant": [
+      "database::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How are tables related in a relational database?",
+    "relevant": [
+      "database::1"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What is SQL used for?",
+    "relevant": [
+      "database::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "Which language is used to query relational databases?",
+    "relevant": [
+      "database::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How can records be inserted and updated in a database?",
+    "relevant": [
+      "database::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "How do developers manage data in relational databases?",
+    "relevant": [
+      "database::2"
+    ],
+    "expected_answerable": true
+  },
+  {
+    "query": "What is the capital city of Japan?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "Who won the FIFA World Cup in 2022?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How far is the Moon from Earth?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What is the boiling point of pure water?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "Who wrote the play Hamlet?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What are the symptoms of seasonal influenza?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How do I bake a chocolate cake?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What is the current price of Bitcoin?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "Which planet has the largest ring system?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How do I renew my passport?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What is the population of Tokyo in 2050?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "Who painted the Mona Lisa?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What is the best route from Delhi to Mumbai?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How does photosynthesis work in plants?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What are the rules of chess?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "Which country has the largest land area?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How can I train for a marathon?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What is the latest version of Android?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "How do earthquakes occur?",
+    "relevant": [],
+    "expected_answerable": false
+  },
+  {
+    "query": "What are the ingredients in traditional sushi?",
+    "relevant": [],
+    "expected_answerable": false
+  }
+]

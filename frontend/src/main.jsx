@@ -95,7 +95,7 @@ function Markdown({ text, sources = [], activeSource, onCitationClick }) {
           <div className="citation-detail-meta">
             {selectedSource.chunk ? `Chunk ${selectedSource.chunk}` : "Retrieved passage"}
             {typeof selectedSource.score === "number"
-              ? ` · ${(selectedSource.score * 100).toFixed(1)}% relevance`
+              ? ` · Similarity score: ${selectedSource.score.toFixed(3)}`
               : ""}
           </div>
           {selectedSource.text && (
